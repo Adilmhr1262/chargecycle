@@ -1,0 +1,1 @@
+{"background_color":"#F8FAFC","description":"Track device charging and battery usage from your own records.","display":"standalone","icons":[{"sizes":"192x192","src":"assets/icon-192.png","type":"image/png"},{"sizes":"512x512","src":"assets/icon-512.png","type":"image/png"}],"name":"ChargeCycle","short_name":"ChargeCycle","start_url":"./index.html","theme_color":"#047857"}

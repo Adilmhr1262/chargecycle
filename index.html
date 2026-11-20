@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ChargeCycle — track device charging and battery usage from your own records.">
+<meta name="theme-color" content="#047857">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<title>ChargeCycle — Battery &amp; Charging Tracker</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="app">
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2z"/></svg>
+      <span class="brand-name">ChargeCycle</span>
+    </div>
+    <nav>
+      <button type="button" class="nav-btn is-active" data-view="dashboard" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l9-8 9 8-9 8-9-8zm9 5.5 5-4.5-5-4.5-5 4.5 5 4.5z"/></svg>
+        Dashboard
+      </button>
+      <button type="button" class="nav-btn" data-view="devices">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm2 18h6v-2H9v2zm1-16h4v1h-4V4z"/></svg>
+        My Devices
+      </button>
+      <button type="button" class="nav-btn" data-view="tracker">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 10.6 4 2.4-1 1.6-5-3V7h2v5.6z"/></svg>
+        Session Tracker
+      </button>
+      <button type="button" class="nav-btn" data-view="history">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v2H4V5zm0 6h16v2H4v-2zm0 6h10v2H4v-2z"/></svg>
+        History &amp; Settings
+      </button>
+    </nav>
+    <div class="sidebar-foot">
+      <button type="button" class="theme-btn" id="themeToggle" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13.5A8.5 8.5 0 0 1 10.5 4 8.5 8.5 0 1 0 20 13.5z"/></svg>
+        <span id="themeLabel">Dark mode</span>
+      </button>
+      <p class="sidebar-note">Your data stays on this device. No accounts, no tracking.</p>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+
+    <!-- Dashboard -->
+    <section class="view is-active" id="view-dashboard" aria-labelledby="dashboardTitle">
+      <header class="page-head">
+        <h1 id="dashboardTitle">Dashboard</h1>
+        <p class="page-sub">Battery life from your own charging and usage records.</p>
+      </header>
+      <div class="stat-grid" id="statGrid"></div>
+      <h2 class="section-title">Estimated battery life by device</h2>
+      <p class="fine-print">Estimates come from your recorded usage only. They are not a guarantee of battery health or performance.</p>
+      <div class="card-list" id="runtimeList"></div>
+      <h2 class="section-title">Recent activity</h2>
+      <div class="card-list" id="recentList"></div>
+    </section>
+
+    <!-- Devices -->
+    <section class="view" id="view-devices" aria-labelledby="devicesTitle" hidden>
+      <header class="page-head">
+        <h1 id="devicesTitle">My Devices</h1>
+        <p class="page-sub">Add the phones, laptops and gadgets you charge.</p>
+      </header>
+      <button type="button" class="btn btn-primary" id="addDeviceBtn">Add device</button>
+      <div class="card-grid" id="deviceGrid"></div>
+    </section>
+
+    <!-- Tracker -->
+    <section class="view" id="view-tracker" aria-labelledby="trackerTitle" hidden>
+      <header class="page-head">
+        <h1 id="trackerTitle">Session Tracker</h1>
+        <p class="page-sub">Start a live session, or record one that already happened.</p>
+      </header>
+      <h2 class="section-title">Live sessions</h2>
+      <div class="card-list" id="liveList"></div>
+      <div class="two-col">
+        <div class="card form-card">
+          <h2 class="card-title">Start a live session</h2>
+          <form id="liveForm" novalidate>
+            <label class="field"><span>Device</span>
+              <select id="liveDevice" required></select>
+            </label>
+            <label class="field"><span>Session type</span>
+              <select id="liveType" required>
+                <option value="usage">Battery usage</option>
+                <option value="charging">Charging</option>
+              </select>
+            </label>
+            <label class="field"><span>Starting battery (%)</span>
+              <input id="liveStartPct" type="number" min="0" max="100" step="1" inputmode="numeric" required>
+            </label>
+            <label class="field"><span>Start time</span>
+              <input id="liveStartTime" type="datetime-local" required>
+            </label>
+            <p class="field-error" id="liveError" hidden></p>
+            <button type="submit" class="btn btn-primary">Start session</button>
+          </form>
+        </div>
+        <div class="card form-card">
+          <h2 class="card-title">Record a past session</h2>
+          <form id="manualForm" novalidate>
+            <label class="field"><span>Device</span>
+              <select id="manualDevice" required></select>
+            </label>
+            <label class="field"><span>Session type</span>
+              <select id="manualType" required>
+                <option value="usage">Battery usage</option>
+                <option value="charging">Charging</option>
+              </select>
+            </label>
+            <div class="field-row">
+              <label class="field"><span>Start battery (%)</span>
+                <input id="manualStartPct" type="number" min="0" max="100" step="1" inputmode="numeric" required>
+              </label>
+              <label class="field"><span>End battery (%)</span>
+                <input id="manualEndPct" type="number" min="0" max="100" step="1" inputmode="numeric" required>
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field"><span>Start time</span>
+                <input id="manualStartTime" type="datetime-local" required>
+              </label>
+              <label class="field"><span>End time</span>
+                <input id="manualEndTime" type="datetime-local" required>
+              </label>
+            </div>
+            <label class="field"><span>Notes (optional)</span>
+              <textarea id="manualNotes" rows="2" maxlength="500"></textarea>
+            </label>
+            <p class="field-error" id="manualError" hidden></p>
+            <button type="submit" class="btn btn-primary">Save session</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- History & Settings -->
+    <section class="view" id="view-history" aria-labelledby="historyTitle" hidden>
+      <header class="page-head">
+        <h1 id="historyTitle">History &amp; Settings</h1>
+        <p class="page-sub">Search your sessions, back up your data, and manage the app.</p>
+      </header>
+      <div class="card filter-card">
+        <h2 class="card-title">Find sessions</h2>
+        <div class="filters">
+          <label class="field"><span>Search</span>
+            <input id="filterSearch" type="search" placeholder="Device name or notes" autocomplete="off">
+          </label>
+          <label class="field"><span>Device</span>
+            <select id="filterDevice"><option value="">All devices</option></select>
+          </label>
+          <label class="field"><span>Type</span>
+            <select id="filterType">
+              <option value="">All types</option>
+              <option value="usage">Battery usage</option>
+              <option value="charging">Charging</option>
+            </select>
+          </label>
+          <label class="field"><span>Date</span>
+            <input id="filterDate" type="date">
+          </label>
+          <button type="button" class="btn btn-secondary" id="clearFilters">Clear filters</button>
+        </div>
+      </div>
+      <div class="card-list" id="historyList"></div>
+
+      <h2 class="section-title">Data &amp; backups</h2>
+      <div class="card settings-card">
+        <div class="setting-row">
+          <div><h3>Export as CSV</h3><p>Download every recorded session as a spreadsheet file.</p></div>
+          <button type="button" class="btn btn-secondary" id="exportCsvBtn">Export CSV</button>
+        </div>
+        <div class="setting-row">
+          <div><h3>Export backup (JSON)</h3><p>Download all devices and sessions in one file.</p></div>
+          <button type="button" class="btn btn-secondary" id="exportJsonBtn">Export backup</button>
+        </div>
+        <div class="setting-row">
+          <div><h3>Restore backup (JSON)</h3><p>Replace all data with a ChargeCycle backup file. Invalid files are rejected and your data is kept.</p></div>
+          <label class="btn btn-secondary file-btn">Choose backup file
+            <input type="file" id="importJsonInput" accept=".json,application/json" hidden>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div><h3>Appearance</h3><p>Switch between light and dark mode. Your choice is saved on this device.</p></div>
+          <button type="button" class="btn btn-secondary" id="themeToggle2">Switch theme</button>
+        </div>
+        <div class="setting-row danger-row">
+          <div><h3>Delete all data</h3><p>Erase every device and session. This cannot be undone.</p></div>
+          <button type="button" class="btn btn-danger" id="deleteAllBtn">Delete all data</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button type="button" class="nav-btn is-active" data-view="dashboard">Dashboard</button>
+    <button type="button" class="nav-btn" data-view="devices">Devices</button>
+    <button type="button" class="nav-btn" data-view="tracker">Tracker</button>
+    <button type="button" class="nav-btn" data-view="history">History</button>
+  </nav>
+</div>
+
+<!-- Device dialog -->
+<dialog class="dialog" id="deviceDialog">
+  <form method="dialog" id="deviceForm" novalidate>
+    <h2 id="deviceDialogTitle">Add device</h2>
+    <input type="hidden" id="deviceId">
+    <label class="field"><span>Device name</span>
+      <input id="deviceName" type="text" maxlength="100" required placeholder="e.g. iPhone 16 Pro Max">
+    </label>
+    <div class="field-row">
+      <label class="field"><span>Brand (optional)</span>
+        <input id="deviceBrand" type="text" maxlength="100" placeholder="e.g. Apple">
+      </label>
+      <label class="field"><span>Model (optional)</span>
+        <input id="deviceModel" type="text" maxlength="100" placeholder="e.g. A3293">
+      </label>
+    </div>
+    <div class="field-row">
+      <label class="field"><span>Category</span>
+        <select id="deviceCategory" required>
+          <option value="Phone">Phone</option>
+          <option value="Laptop">Laptop</option>
+          <option value="Tablet">Tablet</option>
+          <option value="Earbuds">Earbuds</option>
+          <option value="Smartwatch">Smartwatch</option>
+          <option value="Other">Other</option>
+        </select>
+      </label>
+      <label class="field"><span>Battery capacity, mAh (optional)</span>
+        <input id="deviceCapacity" type="number" min="100" max="100000" step="1" inputmode="numeric" placeholder="e.g. 4685">
+      </label>
+    </div>
+    <label class="field"><span>Notes (optional)</span>
+      <textarea id="deviceNotes" rows="2" maxlength="500"></textarea>
+    </label>
+    <p class="field-error" id="deviceError" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Save device</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Stop live session dialog -->
+<dialog class="dialog" id="stopDialog">
+  <form method="dialog" id="stopForm" novalidate>
+    <h2>Stop live session</h2>
+    <p class="dialog-sub" id="stopSummary"></p>
+    <input type="hidden" id="stopSessionId">
+    <label class="field"><span>Ending battery (%)</span>
+      <input id="stopEndPct" type="number" min="0" max="100" step="1" inputmode="numeric" required>
+    </label>
+    <label class="field"><span>End time</span>
+      <input id="stopEndTime" type="datetime-local" required>
+    </label>
+    <p class="field-error" id="stopError" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Stop and save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Edit session dialog -->
+<dialog class="dialog" id="editSessionDialog">
+  <form method="dialog" id="editSessionForm" novalidate>
+    <h2>Edit session</h2>
+    <input type="hidden" id="editSessionId">
+    <label class="field"><span>Device</span>
+      <select id="editDevice" required></select>
+    </label>
+    <label class="field"><span>Session type</span>
+      <select id="editType" required>
+        <option value="usage">Battery usage</option>
+        <option value="charging">Charging</option>
+      </select>
+    </label>
+    <div class="field-row">
+      <label class="field"><span>Start battery (%)</span>
+        <input id="editStartPct" type="number" min="0" max="100" step="1" inputmode="numeric" required>
+      </label>
+      <label class="field"><span>End battery (%)</span>
+        <input id="editEndPct" type="number" min="0" max="100" step="1" inputmode="numeric" required>
+      </label>
+    </div>
+    <div class="field-row">
+      <label class="field"><span>Start time</span>
+        <input id="editStartTime" type="datetime-local" required>
+      </label>
+      <label class="field"><span>End time</span>
+        <input id="editEndTime" type="datetime-local" required>
+      </label>
+    </div>
+    <label class="field"><span>Notes (optional)</span>
+      <textarea id="editNotes" rows="2" maxlength="500"></textarea>
+    </label>
+    <p class="field-error" id="editError" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Save changes</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Confirm dialog -->
+<dialog class="dialog" id="confirmDialog">
+  <form method="dialog" id="confirmForm">
+    <h2 id="confirmTitle">Are you sure?</h2>
+    <p class="dialog-sub" id="confirmText"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+      <button type="submit" class="btn btn-danger" id="confirmYes">Delete</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Delete all dialog -->
+<dialog class="dialog" id="deleteAllDialog">
+  <form method="dialog" id="deleteAllForm" novalidate>
+    <h2>Delete all data</h2>
+    <p class="dialog-sub">This erases every device and session. Type <strong>DELETE</strong> to confirm.</p>
+    <label class="field"><span>Type DELETE to confirm</span>
+      <input id="deleteAllConfirm" type="text" autocomplete="off" placeholder="DELETE">
+    </label>
+    <p class="field-error" id="deleteAllError" hidden></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+      <button type="submit" class="btn btn-danger" id="deleteAllYes" disabled>Delete everything</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="calculations.js"></script>
+<script src="db.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
